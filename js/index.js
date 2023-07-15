@@ -15,8 +15,6 @@ class ProductManager {
                        thumbnail:thumbnail,
                        stock: stock};
         
-
-        
         if (title === undefined) {
             console.log ("producto incompleto revisar");
             return false;
