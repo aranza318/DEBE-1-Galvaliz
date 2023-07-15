@@ -1,79 +1,130 @@
+const fs = require("fs");
+
 class ProductManager {
     constructor() {
+        this.path= "Productos.json";
         this.products = [];
+        this.createFile();
     }
 
-    getProducts() {
-        return this.products;
+
+    createFile(){
+        if(!fs.existsSync(this.path)){
+            fs.writeFileSync(this.path, JSON.stringify(this.products));
+        }
     }
-
-    addProduct(title, description, price, thumbnail, stock) {
-        const producto = {code:this.getId(),
-                       title:title, 
-                       description:description, 
-                       price:price, 
-                       thumbnail:thumbnail,
-                       stock: stock};
-        
-        if (title === undefined) {
-            console.log ("producto incompleto revisar");
-            return false;
-        }
-        if (description === undefined) {
-            console.log ("producto incompleto revisar");
-            return false;
-            
-        }
-        if (price === undefined) {
-            console.log ("producto incompleto revisar");
-            return false;
-        }
-        if (thumbnail === undefined) {
-            console.log ("producto incompleto revisar");
-            return false;
-        }
-        if (stock === undefined) {
-            console.log ("producto incompleto revisar");
-            return false;
-        }
-
+    
+    //Agrega el producto
+    addProduct(product) {
+        if(this.validateCode(product.code)){
+            console.log("Codigo en existencia");
+        } else{
+        const producto = {id: this.getId(),
+                          code: product.code,
+                          title:product.title, 
+                          description:product.description, 
+                          price:product.price, 
+                          thumbnail:product.thumbnail,
+                          stock: product.stock};
+        this.products = this.getProducts()
         this.products.push(producto);
+        this.saveProducts();
+        console.log("Producto agregado");
     }
-
+    }
+    
+    //Consigue el id
     getId() {
         let cod = 0;
 
         this.products.forEach(producto => {
-            cod = producto.code > cod && producto.code;
+            if(producto.id>cod){ 
+                cod = producto.id;
+            }
         });
 
-        return (cod + 1);
+        return cod + 1;
     }
+    
+    //Valida el codigo del producto
+    validateCode(code){
+        return this.products.some(item=> item.code === code);
+    }
+    
+    //Busca el producto por el id
+    getProductsById (id){
+        this.products = JSON.parse(fs.readFileSync(this.path, "utf-8"))
+        return this.products.find(producto => producto.id === id) || "NOT FOUND"
+     
+    }
+    
+    //Actualiza el producto segun su id
+    updateProduct(id, product) {
+        this.products = this.getProducts();
+        let pos = this.products.findIndex(item => item.id === id);
 
-    getProductsById (idProducto){
-        let pos = this.products.findIndex(producto => producto.code === idProducto);
-        console.log(idProducto);
         if (pos > -1) {
-            if (idProducto > -1) {
-                console.log("Si contamos con este producto");
-            } 
+            this.products[pos].title = product.title;
+            this.products[pos].description = product.description;
+            this.products[pos].price = product.price;
+            this.products[pos].thumbnail = product.thumbnail;
+            this.products[pos].code = product.code;
+            this.products[pos].stock = product.stock;
+            this.saveProducts();
+            console.log("Product updated!");
         } else {
-            console.log("NOT FOUND");
+            console.log("Not found!");
         }
     }
     
+    //Guarda los productos en el array (utilizado en la funcion anterior por ejemplo)
+    saveProducts(){
+        fs.writeFileSync(this.path, JSON.stringify(this.products));
+    }
+
+    //Borra el producto segun el id
+    deleteProduct(id){
+        this.products= this.getProducts();
+        let position = this.products.findIndex(item => item.id === id);
+        if(position > -1){
+            this.products.splice(position, 1); (0,1)
+            this.saveProducts();
+            console.log("Product #" + id + "deleted");
+
+        }else {
+            console.log("Not Found");
+        }
+    }
+    
+    //Muestra los objetos en el json 
+    getProducts() {
+        let productosTotales = JSON.parse(fs.readFileSync(this.path, "utf-8"))
+        return productosTotales;
+
+    }
+
 }
 
 const NP = new ProductManager();
-NP.addProduct("jugo", "jugo de frutas", 100,"https://www.clarin.com/img/2018/11/19/1moJNpDSB_340x340__1.jpg", 50);
-NP.addProduct("trago", "trago delicioso", 200,"https://www.clarin.com/img/2022/01/17/negroni-un-trago-clasico-que___QwCr1ph7M_2000x1500__1.jpg", 40);
+NP.addProduct({code:"jugoF",title:"jugo", description:"jugo de frutas", price:100, thumbnail:"https://www.clarin.com/img/2018/11/19/1moJNpDSB_340x340__1.jpg",stock:50});
+NP.addProduct({code:"tragoD",title:"trago", description:"trago delicioso", price:200, thumbnail:"https://www.clarin.com/img/2022/01/17/negroni-un-trago-clasico-que___QwCr1ph7M_2000x1500__1.jpg", stock:40});
 console.log (NP.getProducts());
 NP.getProductsById(1);
 NP.getProductsById(2);
 NP.getProductsById(3);
 console.log (NP.getProducts());
-NP.addProduct("chocolate","chocolate caliente","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcyPfb9m9WI9iwGijaOgxZA01PK0Lhyv-eyf0JOs-6Zy3TDaKvrdzgoJu0A74QQrvZwpY&usqp=CAU", 30);
+NP.addProduct({code:"choco",title:"chocolate", description:"chocolate caliente", price:300, thumbnail:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcyPfb9m9WI9iwGijaOgxZA01PK0Lhyv-eyf0JOs-6Zy3TDaKvrdzgoJu0A74QQrvZwpY&usqp=CAU", stock:30});
 console.log (NP.getProducts());
 NP.getProductsById(4);
 NP.getProductsById(1);
 console.log (NP.getProducts());
+NP.getProductsById(1);
+NP.updateProduct (1,{code:"JugoF",title:"jugo frutal", description:"jugo de frutas", price:100, thumbnail:"https://www.clarin.com/img/2018/11/19/1moJNpDSB_340x340__1.jpg",stock:50} );
+console.log(NP.getProducts());
+NP.deleteProduct(1);
+NP.deleteProduct(2);
+NP.addProduct({code:"jugoF",title:"jugo", description:"jugo de frutas", price:100, thumbnail:"https://www.clarin.com/img/2018/11/19/1moJNpDSB_340x340__1.jpg",stock:50});
+
+
+
+
